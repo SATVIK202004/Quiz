@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Practice Test - All COs</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --correct-bg: #dcfce7;
+            --correct-border: #22c55e;
+            --wrong-bg: #fee2e2;
+            --wrong-border: #ef4444;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h1 { margin: 0; font-size: 1.5rem; }
+        .stats { font-size: 1.2rem; font-weight: bold; }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .section-title {
+            background: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .question-card {
+            background: var(--card);
+            padding: 1.5rem;
+            margin-top: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        .question-text {
+            font-weight: bold;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .option-label:hover { background: #f1f5f9; }
+        input[type="radio"] { margin-right: 10px; transform: scale(1.2); }
+        
+        /* State Classes */
+        .option-label.correct {
+            background-color: var(--correct-bg);
+            border-color: var(--correct-border);
+            font-weight: bold;
+        }
+        .option-label.wrong {
+            background-color: var(--wrong-bg);
+            border-color: var(--wrong-border);
+        }
+
+        .controls {
+            text-align: center;
+            margin: 3rem 0;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+        
+        #results {
+            display: none;
+            text-align: center;
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border: 2px solid var(--primary);
+        }
+        .score-text { font-size: 2rem; font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Knowledge Test (CO1 - CO4)</h1>
+        <div class="stats">
+            Time: <span id="timer">00:00</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="results">
+            <h2>Test Completed!</h2>
+            <div class="score-text">Score: <span id="final-score">0</span> / 250</div>
+            <p>Time Taken: <span id="final-time">00:00</span></p>
+            <button onclick="retakeTest()" style="margin-top: 1rem;">Retake Test</button>
+        </div>
+
+        <div id="quiz-container"></div>
+
+        <div class="controls">
+            <button id="submit-btn" onclick="submitTest()">Submit Test & Check Marks</button>
+        </div>
+    </div>
+
+<script>
+// Data Structure: [Question, [Options], CorrectIndex]
+const quizData = {
+"CO-1 Multiple Choice Questions": [
+["1. Which of the following is the oldest Veda?", ["a) Rigveda", "b) Samaveda", "c) Yajurveda", "d) Atharvaveda"], 0],
+["2. How many Vedas are there in total?", ["a) 2", "b) 3", "c) 4", "d) 5"], 2],
+["3. The Upanishads primarily focus on:", ["a) Rituals and ceremonies", "b) Philosophy and knowledge of the self", "c) Agriculture and law", "d) Medicine"], 1],
+["4. Which of these is a major Smriti text?", ["a) Rigveda", "b) Manusmriti", "c) Upanishads", "d) Samaveda"], 1],
+["5. Pramanas refer to:", ["a) Sacred rituals", "b) Means of knowledge", "c) Philosophical schools", "d) Festivals"], 1],
+["6. The Samaveda is mainly associated with:", ["a) Chants and melodies", "b) Ritual instructions", "c) Philosophy", "d) Law codes"], 0],
+["7. Atharvaveda primarily contains:", ["a) Philosophical ideas", "b) Magical spells, hymns, and rituals", "c) Legal codes", "d) Music theory"], 1],
+["8. The term 'Vedanta' refers to:", ["a) Beginning of Vedas", "b) End of Vedas, philosophical teachings", "c) A Vedic ritual", "d) A Smriti text"], 1],
+["9. Which Veda is known for ritual formulas and ceremonies?", ["a) Rigveda", "b) Samaveda", "c) Yajurveda", "d) Atharvaveda"], 2],
+["10. Manusmriti is an example of:", ["a) Shruti", "b) Smriti", "c) Upanishad", "d) Pramana"], 1],
+["11. How many major Upanishads are considered principal?", ["a) 10", "b) 12", "c) 13", "d) 108"], 3],
+["12. Pratyaksha Pramana refers to:", ["a) Knowledge from scriptures", "b) Knowledge from perception", "c) Knowledge from inference", "d) Knowledge from testimony"], 1],
+["13. Anumana Pramana refers to:", ["a) Knowledge from observation", "b) Knowledge from inference", "c) Knowledge from scriptures", "d) Knowledge from meditation"], 1],
+["14. Shabda Pramana refers to:", ["a) Word/testimony as a source of knowledge", "b) Sense perception", "c) Logical inference", "d) Direct experience"], 0],
+["15. Which Veda is also called the 'Knowledge of Chants'?", ["a) Rigveda", "b) Samaveda", "c) Yajurveda", "d) Atharvaveda"], 1],
+["16. The primary aim of Upanishads is:", ["a) Teaching rituals", "b) Understanding Brahman and Atman", "c) Conducting sacrifices", "d) Prescribing legal codes"], 1],
+["17. Dharma-related rules are mainly found in:", ["a) Upanishads", "b) Smritis", "c) Rigveda", "d) Atharvaveda"], 1],
+["18. The word 'Smriti' literally means:", ["a) That which is remembered", "b) That which is heard", "c) That which is written", "d) That which is chanted"], 0],
+["19. Which Veda contains the hymns for ceremonies of Soma sacrifice?", ["a) Rigveda", "b) Samaveda", "c) Yajurveda", "d) Atharvaveda"], 2],
+["20. How are Pramanas important in Indian philosophy?", ["a) They define rituals", "b) They are means to acquire valid knowledge", "c) They are musical instructions", "d) They describe ethics only"], 1],
+["21. Which Veda emphasizes the philosophical and meditative hymns?", ["a) Rigveda", "b) Samaveda", "c) Yajurveda", "d) Atharvaveda"], 0],
+["22. Brihadaranyaka Upanishad is associated with which Veda?", ["a) Rigveda", "b) Yajurveda", "c) Samaveda", "d) Atharvaveda"], 1],
+["23. Chhandogya Upanishad belongs to:", ["a) Rigveda", "b) Samaveda", "c) Yajurveda", "d) Atharvaveda"], 1],
+["24. Smritis are based on:", ["a) Human memory and traditions", "b) Divine revelation only", "c) Meditation practices only", "d) Astronomy and astrology"], 0],
+["25. Which Pramana is considered the most reliable in Indian epistemology?", ["a) Pratyaksha", "b) Anumana", "c) Shabda", "d) Upamana"], 2],
+["26. The Rigveda primarily contains:", ["a) Hymns praising deities", "b) Philosophical discourses", "c) Ritual manuals", "d) Legal codes"], 0],
+["27. Yajurveda is primarily about:", ["a) Ritual instructions and formulas", "b) Hymns", "c) Magic spells", "d) Philosophical knowledge"], 0],
+["28. Which Smriti text deals with social laws and duties?", ["a) Charaka Samhita", "b) Manusmriti", "c) Sushruta Samhita", "d) Upanishads"], 1],
+["29. Which of these is not a type of Pramana?", ["a) Pratyaksha", "b) Anumana", "c) Shabda", "d) Karma"], 3],
+["30. Upanishads are considered part of:", ["a) Smriti", "b) Shruti", "c) Varnashrama", "d) Dharma"], 1],
+["31. Which Veda is called the 'Knowledge of Sacred Formulas'?", ["a) Rigveda", "b) Yajurveda", "c) Samaveda", "d) Atharvaveda"], 1],
+["32. The concept of Atman is explained in:", ["a) Rigveda", "b) Smritis", "c) Upanishads", "d) Yajurveda"], 2],
+["33. Pramanas are classified as:", ["a) Means of rituals", "b) Means of valid knowledge", "c) Types of Vedic hymns", "d) Philosophical debates"], 1],
+["34. Shabda Pramana relies on:", ["a) Sensory perception", "b) Authoritative testimony", "c) Inference", "d) Meditation"], 1],
+["35. Anumana Pramana uses:", ["a) Logical reasoning to infer knowledge", "b) Authority of scriptures", "c) Rituals", "d) Meditation"], 0],
+["36. Atharvaveda contains:", ["a) Medicine, charms, spells, and practical knowledge", "b) Ritual formulas only", "c) Hymns of praise only", "d) Philosophical doctrines only"], 0],
+["37. The total number of Smritis is:", ["a) 5", "b) 18", "c) Numerous, including Dharmashastras", "d) 108"], 2],
+["38. Which Upanishad is called the earliest and one of the largest?", ["a) Isa", "b) Brihadaranyaka", "c) Katha", "d) Mundaka"], 1],
+["39. Knowledge from direct perception is called:", ["a) Pratyaksha", "b) Anumana", "c) Shabda", "d) Upamana"], 0],
+["40. Smritis supplement:", ["a) Shruti texts", "b) Upanishads only", "c) Rigveda only", "d) None"], 0],
+["41. Chandogya and Brihadaranyaka Upanishads belong to:", ["a) Samaveda", "b) Yajurveda", "c) Rigveda", "d) Atharvaveda"], 1],
+["42. Vedanta literally means:", ["a) Vedic beginning", "b) End of Vedas", "c) Ritual knowledge", "d) Ethical knowledge"], 1],
+["43. The Vedas are considered:", ["a) Smriti", "b) Shruti", "c) Purana", "d) None"], 1],
+["44. Charaka Samhita is associated with:", ["a) Medicine", "b) Astronomy", "c) Music", "d) Law"], 0],
+["45. Knowledge derived from inference is:", ["a) Pratyaksha", "b) Anumana", "c) Shabda", "d) Arthapatti"], 1],
+["46. Which Veda contains chants used in Soma sacrifice?", ["a) Rigveda", "b) Samaveda", "c) Yajurveda", "d) Atharvaveda"], 1],
+["47. Manu Smriti is a guide for:", ["a) Social and ethical laws", "b) Ritual chanting", "c) Medicine", "d) Meditation techniques"], 0],
+["48. Shruti means:", ["a) Remembered", "b) Heard", "c) Written", "d) Composed"], 1],
+["49. Upanishads emphasize:", ["a) Karma only", "b) Moksha and spiritual knowledge", "c) Ritual precision", "d) Medical practices"], 1],
+["50. The main function of Pramanas is:", ["a) Conduct rituals", "b) Provide valid sources of knowledge", "c) Compose hymns", "d) Perform sacrifices"], 1]
+],
+
+"CO-2 Multiple Choice Questions": [
+["1. NEP 2020 was approved in the year:", ["a) 2018", "b) 2019", "c) 2020", "d) 2021"], 2],
+["2. Which ministry implements NEP 2020?", ["a) MHRD", "b) Ministry of Education", "c) UGC", "d) AICTE"], 1],
+["3. NEP 2020 replaced which earlier education policy?", ["a) 1968 Policy", "b) 1986 Policy", "c) 1992 Policy (modified)", "d) Both b & c"], 3],
+["4. The foundational stage in NEP (5+3+3+4) covers ages:", ["a) 6-8 years", "b) 3-8 years", "c) 8-11 years", "d) 14-18 years"], 1],
+["5. The 5+3+3+4 curriculum corresponds to which age range?", ["a) 6-18 years", "b) 3-18 years", "c) 5-25 years", "d) 4-15 years"], 1],
+["6. NEP recommends mother tongue as medium of instruction till:", ["a) Grade 2", "b) Grade 5", "c) Grade 8", "d) Grade 10"], 1],
+["7. NEP promotes which multilingual strategy?", ["a) Three-language formula", "b) Two-language formula", "c) Single language priority", "d) Foreign language priority"], 0],
+["8. NEP aims to achieve 100% GER in school education by:", ["a) 2030", "b) 2040", "c) 2025", "d) 2050"], 1],
+["9. GER stands for:", ["a) General Enrollment Ratio", "b) Gross Enrollment Ratio", "c) Graduate Education Rate", "d) Government Education Review"], 1],
+["10. Which feature is emphasized in NEP?", ["a) Rote learning", "b) Memorization", "c) Holistic and skill-based education", "d) Only theoretical learning"], 2],
+["11. Higher Education regulator proposed by NEP:", ["a) NCTE", "b) NCERT", "c) HECI", "d) IGNOU"], 2],
+["12. HECI stands for:", ["a) Higher Education Council of India", "b) Higher Education Commission of India", "c) High Education Committee of India", "d) None"], 1],
+["13. National Research Foundation (NRF) under NEP is for:", ["a) Teacher training", "b) R&D and innovation", "c) Sports promotion", "d) Distance learning"], 1],
+["14. NEP recommends how many years for undergraduate degrees?", ["a) Fixed 3 years only", "b) Fixed 4 years only", "c) 3 or 4 years flexible", "d) 2 years only"], 2],
+["15. Multidisciplinary education in universities promotes:", ["a) Single-subject specialization", "b) Skill + Humanities + Science integration", "c) No flexibility", "d) Only business studies"], 1],
+["16. ECCE is implemented under NEP for which level?", ["a) Higher education", "b) Early childhood", "c) Technical training", "d) Adult education"], 1],
+["17. ECCE stands for:", ["a) Early Childhood Care and Education", "b) Early Career Counseling Education", "c) Elementary Course Content Education", "d) Education for Child Competency Enhancement"], 0],
+["18. NCERT will develop National Curriculum Framework in which cycle?", ["a) Every 2 years", "b) Every 5 years", "c) Every 10 years", "d) No update required"], 1],
+["19. NEP focuses on what kind of assessments?", ["a) High-stakes exams", "b) Continuous comprehensive evaluation", "c) Competency-based assessment", "d) Random testing"], 2],
+["20. PARAKH is related to:", ["a) National assessment center", "b) Scholarship program", "c) Teacher hiring portal", "d) Vocational training"], 0],
+["21. NEP proposes that teacher education degree will be:", ["a) 2-year diploma", "b) 4-year integrated B.Ed", "c) 1-year certification", "d) Distance learning only"], 1],
+["22. Professional development for teachers is called:", ["a) CPD", "b) CCE", "c) CSR", "d) CCD"], 0],
+["23. NEP promotes teachers as:", ["a) Information deliverers", "b) Learning facilitators", "c) Examination controllers", "d) Only classroom managers"], 1],
+["24. Vocational education target by 2025 is participation of:", ["a) 10% of learners", "b) 50% of learners", "c) 25% of learners", "d) 100% of learners"], 1],
+["25. NEP aims to remove separation between:", ["a) Arts and sports", "b) Science and humanities", "c) Academic and vocational streams", "d) All of the above"], 3],
+["26. NETF stands for:", ["a) National Educational Technology Forum", "b) New Educational Training Foundation", "c) National e-Teaching Federation", "d) National Teachers Forum"], 0],
+["27. NEP encourages digital platforms like:", ["a) SWAYAM", "b) DIKSHA", "c) MOOCS", "d) All of these"], 3],
+["28. NEP recommends which approach for technology?", ["a) Tech-only learning", "b) Blended learning", "c) Offline only", "d) No digital tools"], 1],
+["29. NEP promotes ____ in education.", ["a) Only Western knowledge", "b) Indian Knowledge System integration", "c) No cultural references", "d) Foreign curriculum only"], 1],
+["30. IKS cell is established under:", ["a) NCERT", "b) AICTE", "c) UGC", "d) Ministry of Culture"], 1],
+["31. Subjects promoted under IKS include:", ["a) Yoga, Ayurveda", "b) Vedic mathematics", "c) Arts, culture, heritage", "d) All of the above"], 3],
+["32. Key principle of NEP:", ["a) One-size-fits-all", "b) Flexibility & choice-based learning", "c) Centralized strict curriculum", "d) Exam-oriented system"], 1],
+["33. NEP aims for education to be:", ["a) Rigid & hierarchical", "b) Stress-free & enjoyable", "c) Corporatized entirely", "d) Only skill-based"], 1],
+["34. Focus on 21st century skills includes:", ["a) Critical thinking", "b) Creativity", "c) Problem solving", "d) All of the above"], 3],
+["35. Multiple entry-exit options apply to:", ["a) Primary education", "b) UG programs", "c) Teacher training only", "d) Sports education"], 1],
+["36. Academic Bank of Credit (ABC) supports:", ["a) Credit transfer in higher education", "b) Loan system", "c) Teacher leave system", "d) Research funding"], 0],
+["37. NEP proposes phasing out of:", ["a) Single-stream colleges", "b) Autonomous universities", "c) Private schools", "d) Language diversity"], 0],
+["38. NEP emphasizes autonomy in:", ["a) Curriculum", "b) Finance & administration", "c) Academic decision making", "d) All of the above"], 3],
+["39. SEZs in NEP stand for:", ["a) School Excellence Zones", "b) Special Education Zones", "c) Student Equity Zones", "d) Social Empowerment Zones"], 1],
+["40. NEP ensures educational equity for:", ["a) SC/ST/OBC", "b) Divyang learners", "c) Socio-economically disadvantaged groups", "d) All of these"], 3],
+["41. NEP promotes assessment as:", ["a) Tool for ranking", "b) Tool for fear", "c) Tool for learning improvement", "d) Tool for punishment"], 2],
+["42. What is discouraged under NEP?", ["a) Practical learning", "b) Rote memorization", "c) Critical thinking", "d) Creativity"], 1],
+["43. NEP recommends board exams to be:", ["a) Encouraging memorization", "b) Low-stakes and competency-based", "c) Highly difficult", "d) Optional only"], 1],
+["44. NEP encourages which teaching approach?", ["a) Teacher dictatorship", "b) Constructivist learning", "c) Drill method", "d) Monologue lectures"], 1],
+["45. Skill subjects will start from which grade?", ["a) Grade 3", "b) Grade 6", "c) Grade 8", "d) Grade 10"], 1],
+["46. NEP supports:", ["a) Interdisciplinary education", "b) Multidisciplinary education", "c) Transdisciplinary education", "d) All of the above"], 3],
+["47. Bal Bhavans under NEP are for:", ["a) Teacher training", "b) Co-curricular learning spaces", "c) Health training", "d) Corporate meetings"], 1],
+["48. NEP links education with:", ["a) Sustainable Development Goals (SDGs)", "b) Military expansion", "c) Foreign policy", "d) Banking industry only"], 0],
+["49. NEP aligns early childhood education with:", ["a) Montessori & global best practices", "b) Mechanical drills", "c) Corporate syllabus", "d) Colonial patterns"], 0],
+["50. Key phrase summarizing NEP 2020:", ["a) Examination is everything", "b) Knowledge over creativity", "c) Transformational, holistic, flexible learning", "d) Education for elite groups only"], 2]
+],
+
+"CO-3 Literature, Languages, Arts & Culture (1-100)": [
+["1. Which of the following is considered the oldest classical language of India?", ["A) Tamil", "B) Sanskrit", "C) Pali", "D) Prakrit"], 1],
+["2. The Vedas are composed in which language?", ["A) Pali", "B) Tamil", "C) Sanskrit", "D) Prakrit"], 2],
+["3. Pali language is mainly associated with:", ["A) Jain literature", "B) Buddhist literature", "C) Vedic rituals", "D) Sangam texts"], 1],
+["4. Sangam literature belongs to which language?", ["A) Sanskrit", "B) Pali", "C) Tamil", "D) Prakrit"], 2],
+["5. Which text is part of Sangam literature?", ["A) Rig Veda", "B) Thirukkural", "C) Arthashastra", "D) Manusmriti"], 1],
+["6. Thiruvalluvar is associated with:", ["A) Sanskrit grammar", "B) Tamil ethical literature", "C) Buddhist philosophy", "D) Natya Shastra"], 1],
+["7. Which epic is written by Valmiki?", ["A) Mahabharata", "B) Ramayana", "C) Silappadikaram", "D) Buddhacharita"], 1],
+["8. Mahabharata is traditionally attributed to:", ["A) Kalidasa", "B) Vyasa", "C) Panini", "D) Bharata"], 1],
+["9. Buddhacharita was written by:", ["A) Ashvaghosha", "B) Kalidasa", "C) Banabhatta", "D) Patanjali"], 0],
+["10. Kalidasa is best known for his work:", ["A) Arthashastra", "B) Abhijnana Shakuntalam", "C) Yoga Sutras", "D) Charaka Samhita"], 1],
+["11. Natya Shastra is attributed to:", ["A) Panini", "B) Bharata Muni", "C) Patanjali", "D) Kalidasa"], 1],
+["12. Natya Shastra deals with:", ["A) Temple rituals", "B) Performing arts", "C) Grammar", "D) Architecture"], 1],
+["13. How many Rasas are described in Natya Shastra?", ["A) Six", "B) Eight", "C) Nine", "D) Ten"], 2],
+["14. Which is NOT a classical dance form?", ["A) Bharatanatyam", "B) Kathakali", "C) Yakshagana", "D) Kuchipudi"], 2],
+["15. Bharatanatyam originated in:", ["A) Kerala", "B) Andhra Pradesh", "C) Tamil Nadu", "D) Odisha"], 2],
+["16. Kathak is traditionally associated with:", ["A) Temples", "B) Royal courts", "C) Folk rituals", "D) Monasteries"], 1],
+["17. Odissi dance originated in:", ["A) Odisha", "B) Assam", "C) Karnataka", "D) Maharashtra"], 0],
+["18. Manipuri dance is linked with:", ["A) Shaivism", "B) Vaishnavism", "C) Buddhism", "D) Jainism"], 1],
+["19. Carnatic music developed mainly in:", ["A) North India", "B) South India", "C) Western India", "D) Eastern India"], 1],
+["20. Hindustani music evolved primarily in:", ["A) South India", "B) North India", "C) Eastern India", "D) Deccan plateau"], 1],
+["21. Nagara style of temple architecture is found mainly in:", ["A) North India", "B) South India", "C) Eastern India", "D) Western India"], 0],
+["22. Dravida style temples are characterized by:", ["A) Curvilinear shikhara", "B) Gopurams", "C) Rock-cut caves", "D) Stupas"], 1],
+["23. Vesara style is a blend of:", ["A) Nagara and Dravida", "B) Buddhist and Jain", "C) Folk and classical", "D) Cave and structural"], 0],
+["24. Iconography mainly deals with:", ["A) Temple construction", "B) Symbolic representation of deities", "C) Music notation", "D) Oral traditions"], 1],
+["25. The Nataraja form represents:", ["A) Vishnu", "B) Brahma", "C) Shiva", "D) Indra"], 2],
+["26. Ajanta and Ellora caves belong to which art form?", ["A) Mural painting", "B) Rock-cut architecture", "C) Structural temples", "D) Bronze sculpture"], 1],
+["27. Chola bronzes are famous for depicting:", ["A) Buddha", "B) Shiva as Nataraja", "C) Jain Tirthankaras", "D) Yakshas"], 1],
+["28. Temple sculptures mainly served the purpose of:", ["A) Decoration only", "B) Religious instruction", "C) Economic activity", "D) Political propaganda"], 1],
+["29. Which material was widely used in ancient Indian sculpture?", ["A) Marble only", "B) Stone and bronze", "C) Wood only", "D) Clay only"], 1],
+["30. The Garbhagriha in a temple refers to:", ["A) Assembly hall", "B) Entrance", "C) Sanctum sanctorum", "D) Tower"], 2],
+["31. Folk traditions are primarily transmitted through:", ["A) Printed books", "B) Oral storytelling", "C) Stone inscriptions", "D) Manuscripts only"], 1],
+["32. Harikatha is a combination of:", ["A) Dance and sculpture", "B) Storytelling, music and devotion", "C) Drama and painting", "D) Ritual and architecture"], 1],
+["33. Yakshagana is a folk theatre form of:", ["A) Tamil Nadu", "B) Karnataka", "C) Odisha", "D) Bengal"], 1],
+["34. Pandavani folk tradition narrates stories from:", ["A) Ramayana", "B) Mahabharata", "C) Puranas", "D) Jataka tales"], 1],
+["35. Jataka tales belong to:", ["A) Jain literature", "B) Buddhist tradition", "C) Hindu epics", "D) Sangam literature"], 1],
+["36. Regional epics are important because they:", ["A) Replace classical texts", "B) Reflect local culture and values", "C) Focus on royal history only", "D) Ignore folk traditions"], 1],
+["37. Villupattu is associated with which region?", ["A) Kerala", "B) Tamil Nadu", "C) Assam", "D) Rajasthan"], 1],
+["38. Oral traditions help in preserving:", ["A) Only entertainment", "B) Cultural memory and history", "C) Architecture", "D) Grammar rules"], 1],
+["39. Folk songs are mainly sung during:", ["A) Examinations", "B) Rituals and festivals", "C) Political meetings", "D) Trade activities"], 1],
+["40. Which community art form uses masks extensively?", ["A) Bharatanatyam", "B) Kathak", "C) Chhau dance", "D) Odissi"], 2],
+["41. Manuscripts in ancient India were commonly written on:", ["A) Paper only", "B) Palm leaves and birch bark", "C) Stone slabs", "D) Metal sheets"], 1],
+["42. Preservation of manuscripts is important to:", ["A) Increase tourism", "B) Protect traditional knowledge", "C) Promote trade", "D) Encourage memorization"], 1],
+["43. Which institution traditionally preserved manuscripts?", ["A) Factories", "B) Gurukulas and temples", "C) Courts", "D) Armies"], 1],
+["44. Bhandaras are related to:", ["A) Dance", "B) Manuscript libraries", "C) Music schools", "D) Sculpture workshops"], 1],
+["45. Oral transmission was preferred because:", ["A) Writing was unknown", "B) Accuracy and memorization were valued", "C) Books were banned", "D) Teachers opposed writing"], 1],
+["46. Gurukula system emphasized:", ["A) Paid education", "B) Residential learning", "C) Online learning", "D) Distance education"], 1],
+["47. The teacher in Gurukula system was called:", ["A) Acharya or Guru", "B) Professor", "C) Instructor", "D) Lecturer"], 0],
+["48. Education in Gurukulas focused on:", ["A) Examination results", "B) Character building and values", "C) Competition", "D) Certificates"], 1],
+["49. Which method was central to traditional education?", ["A) Multiple-choice tests", "B) Oral recitation and discussion", "C) Written exams", "D) Online assessment"], 1],
+["50. Gurukula education aimed at developing:", ["A) Skilled workers only", "B) Holistic personality", "C) Exam toppers", "D) Clerks"], 1],
+["51. Culture refers to:", ["A) Economic system only", "B) Way of life of people", "C) Political structure", "D) Technology alone"], 1],
+["52. Civilization mainly denotes:", ["A) Rural life", "B) Urban development and institutions", "C) Religious practices only", "D) Folk traditions only"], 1],
+["53. Indian civilization is known for its:", ["A) Uniformity", "B) Cultural diversity", "C) Isolation", "D) Rigidity"], 1],
+["54. Unity in diversity is a feature of:", ["A) Western civilization", "B) Indian civilization", "C) Industrial society", "D) Nomadic culture"], 1],
+["55. Cultural heritage includes:", ["A) Only monuments", "B) Tangible and intangible traditions", "C) Only literature", "D) Only arts"], 1],
+["56. Intangible heritage includes:", ["A) Temples", "B) Dance, music and oral traditions", "C) Sculpture", "D) Architecture only"], 1],
+["57. Festivals play an important role in:", ["A) Economic planning", "B) Cultural continuity", "C) Political movements", "D) Scientific development"], 1],
+["58. Indian culture emphasizes harmony between:", ["A) Human and machine", "B) Human and nature", "C) Teacher and exam", "D) State and economy"], 1],
+["59. Epics contributed to culture by:", ["A) Providing entertainment only", "B) Teaching moral values", "C) Ignoring society", "D) Replacing education"], 1],
+["60. Performing arts in India were traditionally linked with:", ["A) Entertainment alone", "B) Religion and social life", "C) Sports", "D) Trade"], 1],
+["61. Temple festivals helped in:", ["A) Economic exchange only", "B) Cultural integration", "C) Political rivalry", "D) Military training"], 1],
+["62. Classical languages are important because they:", ["A) Are no longer used", "B) Preserve ancient knowledge", "C) Replace regional languages", "D) Limit learning"], 1],
+["63. Pali Canon is called:", ["A) Tripitaka", "B) Vedas", "C) Agamas", "D) Sangam texts"], 0],
+["64. Agamas are related to:", ["A) Temple rituals and worship", "B) Grammar", "C) Medicine", "D) Music"], 0],
+["65. Silappadikaram is a famous epic in:", ["A) Sanskrit", "B) Tamil", "C) Pali", "D) Prakrit"], 1],
+["66. Folk epics differ from classical epics because they are:", ["A) Written texts only", "B) Oral and region-specific", "C) Court-centered", "D) Sanskrit-based"], 1],
+["67. Which art form combines song, dance and dialogue?", ["A) Sculpture", "B) Drama", "C) Painting", "D) Architecture"], 1],
+["68. Classical music tradition emphasizes:", ["A) Raga and Tala", "B) Lyrics only", "C) Instruments only", "D) Dance only"], 0],
+["69. Which instrument is common in Carnatic music?", ["A) Sitar", "B) Veena", "C) Sarod", "D) Tabla"], 1],
+["70. Mridangam is primarily used in:", ["A) Hindustani music", "B) Carnatic music", "C) Folk music only", "D) Western music"], 1],
+["71. Temple murals were mainly used to depict:", ["A) Daily life only", "B) Mythological themes", "C) Trade activities", "D) Scientific ideas"], 1],
+["72. Sculpture in temples served as:", ["A) Decoration only", "B) Visual storytelling", "C) Economic asset", "D) Political symbol"], 1],
+["73. Iconography helps devotees to:", ["A) Memorize grammar", "B) Understand philosophical ideas visually", "C) Learn music", "D) Practice yoga"], 1],
+["74. Oral epics are preserved through:", ["A) Printing presses", "B) Performers and bards", "C) Universities only", "D) Libraries only"], 1],
+["75. Manuscript copying was traditionally done by:", ["A) Kings", "B) Scribes and monks", "C) Soldiers", "D) Traders"], 1],
+["76. The decline of oral traditions is mainly due to:", ["A) Modern education systems", "B) Printing technology", "C) Urbanization and neglect", "D) Classical languages"], 2],
+["77. Preservation of culture requires:", ["A) Ignoring tradition", "B) Documentation and transmission", "C) Only modernization", "D) Elimination of folk arts"], 1],
+["78. Traditional education stressed learning through:", ["A) Experience and practice", "B) Exams and tests", "C) Ranks", "D) Competition"], 0],
+["79. Gurukula system promoted:", ["A) Individualism", "B) Discipline and simplicity", "C) Materialism", "D) Luxury"], 1],
+["80. Cultural heritage strengthens:", ["A) Identity and continuity", "B) Conflict", "C) Fragmentation", "D) Isolation"], 0],
+["81. Traditional storytelling often used:", ["A) Written scripts only", "B) Music, gestures and narration", "C) Silent reading", "D) Visual slides"], 1],
+["82. The aim of Natya Shastra was to:", ["A) Entertain elites", "B) Educate and delight society", "C) Replace rituals", "D) Promote trade"], 1],
+["83. Classical dance follows:", ["A) Fixed choreography only", "B) Codified techniques and expressions", "C) No rules", "D) Folk improvisation only"], 1],
+["84. Folk arts are important because they:", ["A) Are outdated", "B) Represent people's culture", "C) Replace classical arts", "D) Are commercial only"], 1],
+["85. Sanskrit dramas were usually staged in:", ["A) Streets", "B) Temples and courts", "C) Schools only", "D) Marketplaces"], 1],
+["86. The concept of Rasa aims at evoking:", ["A) Knowledge", "B) Aesthetic experience", "C) Fear", "D) Discipline"], 1],
+["87. Which Rasa represents love?", ["A) Veera", "B) Shringara", "C) Raudra", "D) Bhayanaka"], 1],
+["88. Classical literature often integrates:", ["A) Ethics and aesthetics", "B) Science only", "C) Politics only", "D) Economy only"], 0],
+["89. Temple architecture reflects:", ["A) Economic strength only", "B) Spiritual worldview", "C) Military power", "D) Trade routes"], 1],
+["90. Manuscript culture helped in:", ["A) Preserving philosophical texts", "B) Replacing oral tradition", "C) Limiting knowledge", "D) Destroying diversity"], 0],
+["91. Regional epics often exist in:", ["A) Single written version", "B) Multiple oral versions", "C) Sanskrit only", "D) Printed form only"], 1],
+["92. Culture is transmitted from one generation to another through:", ["A) Instinct", "B) Education and tradition", "C) Biology", "D) Technology only"], 1],
+["93. Indian civilization places importance on:", ["A) Material success only", "B) Values and ethics", "C) Competition", "D) Industrial growth alone"], 1],
+["94. Performing arts were traditionally patronized by:", ["A) Traders only", "B) Kings and temples", "C) Farmers only", "D) Foreigners only"], 1],
+["95. Classical texts were preserved mainly through:", ["A) Printing presses", "B) Memorization and recitation", "C) Digital media", "D) Translation only"], 1],
+["96. Gurukula education promoted respect for:", ["A) Wealth", "B) Guru and knowledge", "C) Power", "D) Examination ranks"], 1],
+["97. Folk traditions contribute to:", ["A) Cultural diversity", "B) Cultural uniformity", "C) Decline of arts", "D) Loss of identity"], 0],
+["98. Manuscript conservation today requires:", ["A) Neglect", "B) Scientific preservation methods", "C) Destruction", "D) Oral teaching only"], 1],
+["99. Traditional education viewed knowledge as:", ["A) Commodity", "B) Sacred and transformative", "C) Mechanical skill", "D) Examination tool"], 1],
+["100. IKS mainly emphasizes:", ["A) Isolated study of arts", "B) Integrated understanding of culture and civilization", "C) Only modern art forms", "D) Technical education"], 1]
+],
+
+"CO-4 Sustainable Development & Environmental Ethics": [
+["1. Indian Knowledge System views sustainable development as:", ["A) Economic growth only", "B) Balance between humans and nature", "C) Industrial expansion", "D) Technological dominance"], 1],
+["2. The concept of harmony with nature in IKS is closely related to:", ["A) Capitalism", "B) Dharma", "C) Consumerism", "D) Globalization"], 1],
+["3. The idea of 'Vasudhaiva Kutumbakam' means:", ["A) World is a battlefield", "B) World is one family", "C) Survival of the fittest", "D) Material success"], 1],
+["4. Environmental ethics in IKS emphasize:", ["A) Exploitation of resources", "B) Conservation and restraint", "C) Industrial profit", "D) Urbanization"], 1],
+["5. Which ancient Indian practice promotes water conservation?", ["A) Industrial dams", "B) Stepwells and tanks", "C) Desalination", "D) Borewells"], 1],
+["6. Sacred groves in India represent:", ["A) Urban planning", "B) Community-based conservation", "C) Commercial forestry", "D) Mining zones"], 1],
+["7. The Panchamahabhuta theory refers to:", ["A) Five senses", "B) Five elements of nature", "C) Five rituals", "D) Five scriptures"], 1],
+["8. IKS approach to environment is best described as:", ["A) Anthropocentric", "B) Ecocentric", "C) Technocentric", "D) Profit-centric"], 1],
+["9. The concept of 'Rta' in Vedic thought signifies:", ["A) Cosmic order", "B) Political power", "C) Economic growth", "D) Social hierarchy"], 0],
+["10. Sustainable living in IKS is guided by:", ["A) Unlimited consumption", "B) Aparigraha (non-possessiveness)", "C) Competition", "D) Industrialization"], 1],
+["11. Ayurveda focuses primarily on:", ["A) Curative medicine only", "B) Preventive and holistic health", "C) Emergency medicine", "D) Surgery alone"], 1],
+["12. The three Doshas in Ayurveda are:", ["A) Vata, Pitta, Kapha", "B) Satva, Rajas, Tamas", "C) Dharma, Artha, Kama", "D) Agni, Soma, Vayu"], 0],
+["13. Yoga aims at:", ["A) Physical fitness only", "B) Union of body, mind, and soul", "C) Athletic excellence", "D) Entertainment"], 1],
+["14. Which text is considered foundational for Yoga philosophy?", ["A) Yoga Sutras of Patanjali", "B) Arthashastra", "C) Manusmriti", "D) Natyashastra"], 0],
+["15. Mindfulness practices in IKS emphasize:", ["A) Speed and efficiency", "B) Awareness and self-regulation", "C) Competition", "D) Material success"], 1],
+["16. Pranayama is related to:", ["A) Diet", "B) Breathing regulation", "C) Meditation posture", "D) Physical exercise"], 1],
+["17. Dhyana in Ashtanga Yoga means:", ["A) Discipline", "B) Concentration", "C) Meditation", "D) Liberation"], 2],
+["18. International Day of Yoga is celebrated on:", ["A) June 21", "B) May 5", "C) July 1", "D) August 15"], 0],
+["19. Yoga contributes to mental health by:", ["A) Increasing stress", "B) Enhancing emotional balance", "C) Promoting competition", "D) Ignoring emotions"], 1],
+["20. Ayurveda considers health as:", ["A) Absence of disease", "B) Balance of body, mind, and spirit", "C) Physical strength only", "D) Longevity alone"], 1],
+["21. Manuscripts in India are traditionally written on:", ["A) Paper only", "B) Palm leaves and birch bark", "C) Stone tablets", "D) Metal sheets"], 1],
+["22. The National Mission for Manuscripts was launched in:", ["A) 1995", "B) 2003", "C) 2010", "D) 2020"], 1],
+["23. The primary objective of the National Mission for Manuscripts is to:", ["A) Commercialize texts", "B) Preserve and digitize manuscripts", "C) Translate only foreign works", "D) Destroy old records"], 1],
+["24. Digitization of manuscripts helps in:", ["A) Physical decay", "B) Wider accessibility and preservation", "C) Loss of authenticity", "D) Commercial misuse"], 1],
+["25. Manuscript preservation supports:", ["A) Cultural continuity", "B) Cultural loss", "C) Knowledge erosion", "D) Historical neglect"], 0],
+["26. Which institution coordinates manuscript preservation in India?", ["A) UGC", "B) IGNCA", "C) National Mission for Manuscripts", "D) AICTE"], 2],
+["27. One major challenge in manuscript preservation is:", ["A) Abundance of resources", "B) Linguistic diversity", "C) Climate conditions", "D) Both B and C"], 3],
+["28. Digitisation aligns IKS with:", ["A) Ancient isolation", "B) Modern technology", "C) Oral extinction", "D) Cultural neglect"], 1],
+["29. Manuscript cataloguing helps in:", ["A) Ignoring texts", "B) Systematic documentation", "C) Loss of heritage", "D) Commercialization"], 1],
+["30. Preservation of manuscripts contributes to:", ["A) Sustainable knowledge systems", "B) Knowledge destruction", "C) Cultural alienation", "D) Academic decline"], 0],
+["31. NEP 2020 emphasizes integration of:", ["A) Only western knowledge", "B) Indian Knowledge Systems", "C) Technical skills alone", "D) Exam-oriented learning"], 1],
+["32. NEP 2020 promotes education in:", ["A) Foreign languages only", "B) Indian languages and mother tongue", "C) English only", "D) No language learning"], 1],
+["33. Holistic and multidisciplinary education is a key feature of:", ["A) ΝΕΡ 1986", "B) ΝΕΡ 2020", "C) RTE Act only", "D) Colonial policy"], 1],
+["34. IKS integration helps students develop:", ["A) Rote learning", "B) Ethical and cultural grounding", "C) Exam fear", "D) Mechanical skills"], 1],
+["35. Yoga education in schools promotes:", ["A) Stress and anxiety", "B) Physical and mental well-being", "C) Competition", "D) Rigid discipline"], 1],
+["36. Value-based education in IKS emphasizes:", ["A) Material success", "B) Character and ethics", "C) Industrial output", "D) Ranking"], 1],
+["37. Experiential learning in IKS is similar to:", ["A) Gurukula system", "B) Factory model", "C) Lecture-only method", "D) Examination drilling"], 0],
+["38. NEP 2020 encourages use of technology for:", ["A) Exclusion", "B) Access and inclusion", "C) Memorization", "D) Privatization only"], 1],
+["39. IKS-based curriculum supports:", ["A) Fragmented knowledge", "B) Holistic development", "C) Narrow specialization", "D) Cultural alienation"], 1],
+["40. Integration of IKS promotes:", ["A) Loss of identity", "B) Cultural confidence", "C) Intellectual dependency", "D) Colonial mindset"], 1],
+["41. Mindfulness practices help in:", ["A) Emotional imbalance", "B) Stress reduction", "C) Increased anxiety", "D) Mental fatigue"], 1],
+["42. IKS contributes to public health by:", ["A) Ignoring lifestyle diseases", "B) Promoting preventive healthcare", "C) Focusing only on hospitals", "D) Rejecting modern medicine"], 1],
+["43. Sustainable agriculture in IKS includes:", ["A) Monoculture farming", "B) Organic and traditional practices", "C) Chemical dependency", "D) Industrial farming"], 1],
+["44. Yoga and meditation are globally recognized for:", ["A) Physical competition", "B) Mental peace and resilience", "C) Entertainment", "D) Profit generation"], 1],
+["45. Preservation of IKS supports:", ["A) Cultural erosion", "B) Knowledge sovereignty", "C) Dependency", "D) Intellectual loss"], 1],
+["46. ΝΕΡ 2020 aims to create learners who are:", ["A) Exam-centric", "B) Holistic and innovative", "C) Passive recipients", "D) Isolated thinkers"], 1],
+["47. Integration of IKS in higher education encourages:", ["A) Interdisciplinary research", "B) Knowledge silos", "C) Rote memorization", "D) Cultural neglect"], 0],
+["48. Traditional knowledge supports SDGs by:", ["A) Opposing sustainability", "B) Encouraging responsible consumption", "C) Ignoring environment", "D) Promoting waste"], 1],
+["49. Digitization bridges the gap between:", ["A) Past and present knowledge", "B) Knowledge and ignorance", "C) Tradition and loss", "D) Culture and decay"], 0],
+["50. The ultimate aim of integrating IKS is:", ["A) Cultural revival alone", "B) Holistic human development", "C) Exam success", "D) Economic profit"], 1]
+]
+};
+
+// Global variables
+let timerInterval;
+let seconds = 0;
+let isSubmitted = false;
+let globalQIndex = 0;
+
+// Format time
+function formatTime(sec) {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+}
+
+// Start Timer
+function startTimer() {
+    seconds = 0;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        seconds++;
+        document.getElementById('timer').innerText = formatTime(seconds);
+    }, 1000);
+}
+
+// Render Quiz
+function renderQuiz() {
+    const container = document.getElementById('quiz-container');
+    container.innerHTML = '';
+    globalQIndex = 0;
+
+    for (const [section, questions] of Object.entries(quizData)) {
+        // Create Section Title
+        const sectionDiv = document.createElement('div');
+        sectionDiv.className = 'section-title';
+        sectionDiv.innerText = section;
+        container.appendChild(sectionDiv);
+
+        // Create Questions for this section
+        questions.forEach((qData, index) => {
+            const [questionText, options, correctIndex] = qData;
+            
+            const qCard = document.createElement('div');
+            qCard.className = 'question-card';
+            qCard.id = `q-${globalQIndex}`;
+            
+            let html = `<div class="question-text">${questionText}</div><div class="options">`;
+            
+            options.forEach((opt, optIdx) => {
+                html += `
+                    <label class="option-label" id="label-${globalQIndex}-${optIdx}">
+                        <input type="radio" name="q${globalQIndex}" value="${optIdx}">
+                        ${opt}
+                    </label>
+                `;
+            });
+            
+            html += `</div>`;
+            qCard.innerHTML = html;
+            qCard.dataset.correct = correctIndex; // Store correct answer hidden
+            
+            container.appendChild(qCard);
+            globalQIndex++;
+        });
+    }
+}
+
+// Submit Test
+function submitTest() {
+    if (isSubmitted) return;
+    
+    clearInterval(timerInterval);
+    isSubmitted = true;
+    let score = 0;
+    
+    // Check all questions
+    for (let i = 0; i < globalQIndex; i++) {
+        const qCard = document.getElementById(`q-${i}`);
+        const correctIdx = parseInt(qCard.dataset.correct);
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        
+        // Mark correct answer
+        document.getElementById(`label-${i}-${correctIdx}`).classList.add('correct');
+        
+        if (selected) {
+            const selectedIdx = parseInt(selected.value);
+            if (selectedIdx === correctIdx) {
+                score++;
+            } else {
+                // Mark wrong selection
+                document.getElementById(`label-${i}-${selectedIdx}`).classList.add('wrong');
+            }
+        }
+    }
+    
+    // Disable inputs
+    const inputs = document.querySelectorAll('input[type="radio"]');
+    inputs.forEach(input => input.disabled = true);
+    
+    // Update Results
+    document.getElementById('final-score').innerText = score;
+    document.getElementById('final-time').innerText = formatTime(seconds);
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('submit-btn').style.display = 'none';
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Retake Test
+function retakeTest() {
+    isSubmitted = false;
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('submit-btn').style.display = 'inline-block';
+    renderQuiz();
+    startTimer();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Initialize on load
+window.onload = () => {
+    renderQuiz();
+    startTimer();
+};
+
+</script>
+</body>
+</html>
