@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IKS Knowledge Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1b2d;
+    --navy2: #162236;
+    --gold: #f0a500;
+    --gold2: #ffc846;
+    --white: #f5f0e8;
+    --muted: #8a9ab5;
+    --correct: #22c55e;
+    --wrong: #ef4444;
+    --card-bg: #1a2d45;
+    --border: #243650;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(240,165,0,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 90%, rgba(34,100,180,0.12) 0%, transparent 60%);
+    pointer-events:none; z-index:0;
+  }
+  .screen { position:relative; z-index:1; display:none; }
+  .screen.active { display:block; }
+
+  /* HOME */
+  .home-header { text-align:center; padding:60px 20px 40px; }
+  .badge {
+    display:inline-block;
+    background:rgba(240,165,0,0.15);
+    border:1px solid rgba(240,165,0,0.4);
+    color:var(--gold);
+    font-size:0.75rem; font-weight:600;
+    letter-spacing:0.12em; text-transform:uppercase;
+    padding:6px 16px; border-radius:100px; margin-bottom:20px;
+  }
+  .home-header h1 {
+    font-family:'Playfair Display',serif;
+    font-size:clamp(2.2rem,6vw,3.8rem); font-weight:900;
+    line-height:1.1; color:var(--white); margin-bottom:14px;
+  }
+  .home-header h1 span { color:var(--gold); }
+  .home-header p { color:var(--muted); font-size:1rem; max-width:480px; margin:0 auto; }
+
+  .co-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:20px; max-width:1000px; margin:0 auto; padding:0 24px 80px;
+  }
+  .co-card {
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:20px; padding:32px 28px;
+    cursor:pointer;
+    transition:transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+    position:relative; overflow:hidden;
+    animation:fadeUp 0.5s ease both;
+  }
+  .co-card:nth-child(1){animation-delay:0.05s}
+  .co-card:nth-child(2){animation-delay:0.1s}
+  .co-card:nth-child(3){animation-delay:0.15s}
+  .co-card:nth-child(4){animation-delay:0.2s}
+  @keyframes fadeUp {
+    from{opacity:0;transform:translateY(24px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  .co-card::before {
+    content:''; position:absolute; top:0; left:0; right:0;
+    height:3px; background:var(--card-accent,var(--gold));
+    border-radius:20px 20px 0 0; transition:height 0.25s;
+  }
+  .co-card:hover { transform:translateY(-6px); box-shadow:0 24px 48px rgba(0,0,0,0.4); border-color:rgba(240,165,0,0.35); }
+  .co-card:hover::before { height:5px; }
+  .co-card[data-co="1"]{--card-accent:#f0a500}
+  .co-card[data-co="2"]{--card-accent:#3b82f6}
+  .co-card[data-co="3"]{--card-accent:#a855f7}
+  .co-card[data-co="4"]{--card-accent:#22c55e}
+
+  .co-num {
+    font-family:'Playfair Display',serif; font-size:3rem; font-weight:900;
+    color:var(--card-accent,var(--gold)); opacity:0.22; line-height:1; margin-bottom:12px;
+  }
+  .co-tag {
+    display:inline-block; font-size:0.7rem; font-weight:600;
+    letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--card-accent,var(--gold));
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    padding:4px 10px; border-radius:6px; margin-bottom:14px;
+  }
+  .co-card h2 {
+    font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700;
+    color:var(--white); margin-bottom:8px; line-height:1.3;
+  }
+  .co-card p { color:var(--muted); font-size:0.88rem; line-height:1.6; margin-bottom:20px; }
+  .co-meta { display:flex; gap:16px; margin-bottom:0; }
+  .co-meta-item { display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--muted); }
+  .co-meta-item .dot { width:6px;height:6px;border-radius:50%;background:var(--card-accent,var(--gold));display:inline-block; }
+
+  .start-btn {
+    margin-top:22px; width:100%; padding:12px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:10px; color:var(--white);
+    font-family:'DM Sans',sans-serif; font-size:0.9rem; font-weight:600;
+    cursor:pointer; transition:background 0.2s, border-color 0.2s, color 0.2s;
+    letter-spacing:0.03em;
+  }
+  .co-card:hover .start-btn {
+    background:var(--card-accent,var(--gold));
+    border-color:var(--card-accent,var(--gold));
+    color:#0f1b2d;
+  }
+
+  /* TEST TOPBAR */
+  .test-topbar {
+    position:sticky; top:0; z-index:100;
+    background:rgba(15,27,45,0.95); backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border);
+    padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .back-btn {
+    display:flex; align-items:center; gap:8px;
+    background:none; border:1px solid var(--border);
+    color:var(--muted); font-family:'DM Sans',sans-serif;
+    font-size:0.85rem; padding:8px 14px; border-radius:8px;
+    cursor:pointer; transition:color 0.2s, border-color 0.2s; white-space:nowrap;
+  }
+  .back-btn:hover { color:var(--white); border-color:var(--muted); }
+  .topbar-center { flex:1; text-align:center; }
+  .topbar-title { font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:700; color:var(--white); }
+  .topbar-sub { font-size:0.72rem; color:var(--muted); margin-top:1px; }
+  .topbar-right { display:flex; align-items:center; gap:10px; }
+  .score-pill {
+    background:rgba(240,165,0,0.12); border:1px solid rgba(240,165,0,0.3);
+    color:var(--gold); font-size:0.82rem; font-weight:600;
+    padding:6px 12px; border-radius:100px; white-space:nowrap;
+  }
+  .timer-pill {
+    background:rgba(255,255,255,0.05); border:1px solid var(--border);
+    color:var(--white); font-size:0.82rem; font-weight:600;
+    padding:6px 12px; border-radius:100px; font-variant-numeric:tabular-nums;
+  }
+  .progress-wrap { height:3px; background:var(--border); position:sticky; top:57px; z-index:99; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold2)); transition:width 0.4s ease; width:0%; }
+
+  /* QUESTIONS */
+  .questions-container { max-width:760px; margin:0 auto; padding:28px 20px 90px; }
+  .question-card {
+    background:var(--card-bg); border:1px solid var(--border);
+    border-radius:16px; padding:26px; margin-bottom:14px;
+    transition:border-color 0.3s;
+  }
+  .question-card.answered-correct { border-left:4px solid rgba(34,197,94,0.6); }
+  .question-card.answered-wrong   { border-left:4px solid rgba(239,68,68,0.55); }
+
+  .q-header { display:flex; align-items:flex-start; gap:14px; margin-bottom:18px; }
+  .q-number {
+    flex-shrink:0; width:30px; height:30px; border-radius:50%;
+    background:rgba(255,255,255,0.06); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.72rem; font-weight:600; color:var(--muted);
+  }
+  .question-card.answered-correct .q-number { background:rgba(34,197,94,0.15); border-color:var(--correct); color:var(--correct); }
+  .question-card.answered-wrong   .q-number { background:rgba(239,68,68,0.15); border-color:var(--wrong); color:var(--wrong); }
+  .q-text { font-size:0.97rem; font-weight:500; color:var(--white); line-height:1.6; }
+
+  .options { display:flex; flex-direction:column; gap:9px; }
+  .option-label {
+    display:flex; align-items:center; gap:12px;
+    padding:13px 15px; border:1px solid var(--border);
+    border-radius:10px; cursor:pointer;
+    transition:background 0.18s, border-color 0.18s;
+    font-size:0.9rem; color:#c8d4e6;
+  }
+  .option-label:hover:not(.locked) { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.18); }
+  .option-label input[type="radio"] { display:none; }
+  .opt-circle {
+    width:24px; height:24px; border-radius:50%;
+    border:2px solid var(--border); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.72rem; font-weight:700; color:var(--muted);
+    transition:all 0.18s;
+  }
+  .option-label.correct { background:rgba(34,197,94,0.1); border-color:rgba(34,197,94,0.6); color:#86efac; }
+  .option-label.correct .opt-circle { background:var(--correct); border-color:var(--correct); color:#fff; content:'✓'; }
+  .option-label.wrong   { background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.5); color:#fca5a5; }
+  .option-label.wrong   .opt-circle { background:var(--wrong); border-color:var(--wrong); color:#fff; }
+  .option-label.show-correct { background:rgba(34,197,94,0.07); border-color:rgba(34,197,94,0.4); color:#86efac; }
+  .option-label.show-correct .opt-circle { border-color:var(--correct); color:var(--correct); }
+
+  .feedback-tag {
+    font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    margin-left:auto; padding:3px 8px; border-radius:5px; flex-shrink:0;
+  }
+  .correct .feedback-tag { background:rgba(34,197,94,0.2); color:var(--correct); }
+  .wrong   .feedback-tag { background:rgba(239,68,68,0.2); color:var(--wrong); }
+  .show-correct .feedback-tag { background:rgba(34,197,94,0.12); color:#4ade80; }
+
+  /* SUBMIT BAR */
+  .submit-bar {
+    position:fixed; bottom:0; left:0; right:0;
+    background:rgba(15,27,45,0.97); backdrop-filter:blur(16px);
+    border-top:1px solid var(--border);
+    padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:100;
+  }
+  .submit-info { font-size:0.82rem; color:var(--muted); }
+  .submit-info strong { color:var(--white); }
+  .submit-btn {
+    background:var(--gold); color:#0f1b2d; border:none;
+    padding:11px 26px; border-radius:10px;
+    font-family:'DM Sans',sans-serif; font-size:0.92rem; font-weight:700;
+    cursor:pointer; transition:background 0.2s, transform 0.15s;
+  }
+  .submit-btn:hover { background:var(--gold2); transform:scale(1.02); }
+
+  /* RESULT OVERLAY */
+  .result-overlay {
+    display:none; position:fixed; inset:0; z-index:200;
+    background:rgba(10,18,30,0.88); backdrop-filter:blur(12px);
+    align-items:center; justify-content:center;
+  }
+  .result-overlay.show { display:flex; }
+  .result-card {
+    background:var(--card-bg); border:1px solid var(--border);
+    border-radius:24px; padding:44px 38px; text-align:center;
+    max-width:400px; width:90%;
+    animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes popIn {
+    from{transform:scale(0.8);opacity:0}
+    to{transform:scale(1);opacity:1}
+  }
+  .result-card .emoji { font-size:3rem; margin-bottom:14px; }
+  .result-card h2 { font-family:'Playfair Display',serif; font-size:1.7rem; color:var(--white); margin-bottom:6px; }
+  .result-score { font-size:3.2rem; font-weight:900; color:var(--gold); line-height:1; margin:18px 0 4px; font-family:'Playfair Display',serif; }
+  .result-label { color:var(--muted); font-size:0.85rem; margin-bottom:22px; }
+  .result-stats { display:flex; gap:10px; margin-bottom:24px; justify-content:center; }
+  .stat-box {
+    flex:1; background:rgba(255,255,255,0.04); border:1px solid var(--border);
+    border-radius:12px; padding:12px 8px;
+  }
+  .stat-box .val { font-size:1.3rem; font-weight:700; color:var(--white); }
+  .stat-box .lbl { font-size:0.68rem; color:var(--muted); margin-top:3px; }
+  .stat-box.green .val { color:var(--correct); }
+  .stat-box.red   .val { color:var(--wrong); }
+  .result-actions { display:flex; flex-direction:column; gap:10px; }
+  .btn-primary {
+    background:var(--gold); color:#0f1b2d; border:none; padding:13px;
+    border-radius:10px; font-family:'DM Sans',sans-serif;
+    font-size:0.93rem; font-weight:700; cursor:pointer; transition:background 0.2s;
+  }
+  .btn-primary:hover { background:var(--gold2); }
+  .btn-secondary {
+    background:rgba(255,255,255,0.05); color:var(--white);
+    border:1px solid var(--border); padding:12px;
+    border-radius:10px; font-family:'DM Sans',sans-serif;
+    font-size:0.9rem; font-weight:500; cursor:pointer; transition:background 0.2s;
+  }
+  .btn-secondary:hover { background:rgba(255,255,255,0.1); }
+
+  @media(max-width:600px){
+    .home-header{padding:36px 16px 24px}
+    .co-grid{padding:0 14px 60px; gap:14px}
+    .test-topbar{padding:10px 12px}
+    .topbar-title{font-size:0.9rem}
+    .questions-container{padding:16px 12px 80px}
+    .question-card{padding:18px 14px}
+    .result-card{padding:32px 20px}
+    .topbar-right{gap:6px}
+    .score-pill,.timer-pill{font-size:0.75rem; padding:5px 9px}
+  }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home-screen" class="screen active">
+  <div class="home-header">
+    <div class="badge">Indian Knowledge System</div>
+    <h1>IKS Practice <span>Test</span></h1>
+    <p>Choose a Course Outcome to begin. Get instant right/wrong feedback as you answer each question.</p>
+  </div>
+  <div class="co-grid">
+    <div class="co-card" data-co="1" onclick="startTest('CO1')">
+      <div class="co-num">01</div>
+      <div class="co-tag">CO — 1</div>
+      <h2>Vedas, Upanishads &amp; Pramanas</h2>
+      <p>Foundational knowledge — Shruti, Smriti, sources of valid knowledge and Vedic philosophy.</p>
+      <div class="co-meta">
+        <div class="co-meta-item"><span class="dot"></span>50 Questions</div>
+        <div class="co-meta-item"><span class="dot"></span>MCQ</div>
+      </div>
+      <button class="start-btn">Start CO-1 Test →</button>
+    </div>
+    <div class="co-card" data-co="2" onclick="startTest('CO2')">
+      <div class="co-num">02</div>
+      <div class="co-tag">CO — 2</div>
+      <h2>National Education Policy 2020</h2>
+      <p>NEP framework, ECCE, teacher education, digital learning and multidisciplinary approach.</p>
+      <div class="co-meta">
+        <div class="co-meta-item"><span class="dot"></span>50 Questions</div>
+        <div class="co-meta-item"><span class="dot"></span>MCQ</div>
+      </div>
+      <button class="start-btn">Start CO-2 Test →</button>
+    </div>
+    <div class="co-card" data-co="3" onclick="startTest('CO3')">
+      <div class="co-num">03</div>
+      <div class="co-tag">CO — 3</div>
+      <h2>Literature, Arts &amp; Culture</h2>
+      <p>Classical languages, dance, music, temple architecture, folk traditions and Gurukula system.</p>
+      <div class="co-meta">
+        <div class="co-meta-item"><span class="dot"></span>100 Questions</div>
+        <div class="co-meta-item"><span class="dot"></span>MCQ</div>
+      </div>
+      <button class="start-btn">Start CO-3 Test →</button>
+    </div>
+    <div class="co-card" data-co="4" onclick="startTest('CO4')">
+      <div class="co-num">04</div>
+      <div class="co-tag">CO — 4</div>
+      <h2>Sustainable Dev. &amp; Environment</h2>
+      <p>IKS &amp; ecology, Yoga, Ayurveda, manuscript preservation and NEP integration.</p>
+      <div class="co-meta">
+        <div class="co-meta-item"><span class="dot"></span>50 Questions</div>
+        <div class="co-meta-item"><span class="dot"></span>MCQ</div>
+      </div>
+      <button class="start-btn">Start CO-4 Test →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEST -->
+<div id="test-screen" class="screen">
+  <div class="test-topbar">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <div class="topbar-center">
+      <div class="topbar-title" id="topbar-title">Test</div>
+      <div class="topbar-sub" id="topbar-sub">0 / 0 answered</div>
+    </div>
+    <div class="topbar-right">
+      <div class="score-pill">Score: <span id="live-score">0</span></div>
+      <div class="timer-pill" id="timer">00:00</div>
+    </div>
+  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="questions-container" id="questions-container"></div>
+  <div class="submit-bar">
+    <div class="submit-info"><strong id="answered-count">0</strong> of <strong id="total-count">0</strong> answered</div>
+    <button class="submit-btn" onclick="submitTest()">Submit &amp; See Results</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <div class="emoji" id="result-emoji">🎉</div>
+    <h2 id="result-title">Well Done!</h2>
+    <div class="result-score" id="result-score">0</div>
+    <div class="result-label" id="result-label">out of 0</div>
+    <div class="result-stats">
+      <div class="stat-box green"><div class="val" id="res-correct">0</div><div class="lbl">Correct</div></div>
+      <div class="stat-box red"><div class="val" id="res-wrong">0</div><div class="lbl">Wrong</div></div>
+      <div class="stat-box"><div class="val" id="res-skipped">0</div><div class="lbl">Skipped</div></div>
+      <div class="stat-box"><div class="val" id="res-time">--</div><div class="lbl">Time</div></div>
+    </div>
+    <div class="result-actions">
+      <button class="btn-primary" onclick="retakeTest()">Retake This Test</button>
+      <button class="btn-secondary" onclick="goHome()">← Choose Another CO</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const quizData = {
+  CO1:{label:"CO-1",title:"Vedas, Upanishads & Pramanas",questions:[
+    ["Which of the following is the oldest Veda?",["Rigveda","Samaveda","Yajurveda","Atharvaveda"],0],
+    ["How many Vedas are there in total?",["2","3","4","5"],2],
+    ["The Upanishads primarily focus on:",["Rituals and ceremonies","Philosophy and knowledge of the self","Agriculture and law","Medicine"],1],
+    ["Which of these is a major Smriti text?",["Rigveda","Manusmriti","Upanishads","Samaveda"],1],
+    ["Pramanas refer to:",["Sacred rituals","Means of knowledge","Philosophical schools","Festivals"],1],
+    ["The Samaveda is mainly associated with:",["Chants and melodies","Ritual instructions","Philosophy","Law codes"],0],
+    ["Atharvaveda primarily contains:",["Philosophical ideas","Magical spells, hymns, and rituals","Legal codes","Music theory"],1],
+    ["The term 'Vedanta' refers to:",["Beginning of Vedas","End of Vedas, philosophical teachings","A Vedic ritual","A Smriti text"],1],
+    ["Which Veda is known for ritual formulas and ceremonies?",["Rigveda","Samaveda","Yajurveda","Atharvaveda"],2],
+    ["Manusmriti is an example of:",["Shruti","Smriti","Upanishad","Pramana"],1],
+    ["How many major Upanishads are considered principal?",["10","12","13","108"],3],
+    ["Pratyaksha Pramana refers to:",["Knowledge from scriptures","Knowledge from perception","Knowledge from inference","Knowledge from testimony"],1],
+    ["Anumana Pramana refers to:",["Knowledge from observation","Knowledge from inference","Knowledge from scriptures","Knowledge from meditation"],1],
+    ["Shabda Pramana refers to:",["Word/testimony as a source of knowledge","Sense perception","Logical inference","Direct experience"],0],
+    ["Which Veda is also called the 'Knowledge of Chants'?",["Rigveda","Samaveda","Yajurveda","Atharvaveda"],1],
+    ["The primary aim of Upanishads is:",["Teaching rituals","Understanding Brahman and Atman","Conducting sacrifices","Prescribing legal codes"],1],
+    ["Dharma-related rules are mainly found in:",["Upanishads","Smritis","Rigveda","Atharvaveda"],1],
+    ["The word 'Smriti' literally means:",["That which is remembered","That which is heard","That which is written","That which is chanted"],0],
+    ["Which Veda contains the hymns for ceremonies of Soma sacrifice?",["Rigveda","Samaveda","Yajurveda","Atharvaveda"],2],
+    ["How are Pramanas important in Indian philosophy?",["They define rituals","They are means to acquire valid knowledge","They are musical instructions","They describe ethics only"],1],
+    ["Which Veda emphasizes the philosophical and meditative hymns?",["Rigveda","Samaveda","Yajurveda","Atharvaveda"],0],
+    ["Brihadaranyaka Upanishad is associated with which Veda?",["Rigveda","Yajurveda","Samaveda","Atharvaveda"],1],
+    ["Chhandogya Upanishad belongs to:",["Rigveda","Samaveda","Yajurveda","Atharvaveda"],1],
+    ["Smritis are based on:",["Human memory and traditions","Divine revelation only","Meditation practices only","Astronomy and astrology"],0],
+    ["Which Pramana is considered the most reliable in Indian epistemology?",["Pratyaksha","Anumana","Shabda","Upamana"],2],
+    ["The Rigveda primarily contains:",["Hymns praising deities","Philosophical discourses","Ritual manuals","Legal codes"],0],
+    ["Yajurveda is primarily about:",["Ritual instructions and formulas","Hymns","Magic spells","Philosophical knowledge"],0],
+    ["Which Smriti text deals with social laws and duties?",["Charaka Samhita","Manusmriti","Sushruta Samhita","Upanishads"],1],
+    ["Which of these is not a type of Pramana?",["Pratyaksha","Anumana","Shabda","Karma"],3],
+    ["Upanishads are considered part of:",["Smriti","Shruti","Varnashrama","Dharma"],1],
+    ["Which Veda is called the 'Knowledge of Sacred Formulas'?",["Rigveda","Yajurveda","Samaveda","Atharvaveda"],1],
+    ["The concept of Atman is explained in:",["Rigveda","Smritis","Upanishads","Yajurveda"],2],
+    ["Pramanas are classified as:",["Means of rituals","Means of valid knowledge","Types of Vedic hymns","Philosophical debates"],1],
+    ["Shabda Pramana relies on:",["Sensory perception","Authoritative testimony","Inference","Meditation"],1],
+    ["Anumana Pramana uses:",["Logical reasoning to infer knowledge","Authority of scriptures","Rituals","Meditation"],0],
+    ["Atharvaveda contains:",["Medicine, charms, spells, and practical knowledge","Ritual formulas only","Hymns of praise only","Philosophical doctrines only"],0],
+    ["The total number of Smritis is:",["5","18","Numerous, including Dharmashastras","108"],2],
+    ["Which Upanishad is called the earliest and one of the largest?",["Isa","Brihadaranyaka","Katha","Mundaka"],1],
+    ["Knowledge from direct perception is called:",["Pratyaksha","Anumana","Shabda","Upamana"],0],
+    ["Smritis supplement:",["Shruti texts","Upanishads only","Rigveda only","None"],0],
+    ["Chandogya and Brihadaranyaka Upanishads belong to:",["Samaveda","Yajurveda","Rigveda","Atharvaveda"],1],
+    ["Vedanta literally means:",["Vedic beginning","End of Vedas","Ritual knowledge","Ethical knowledge"],1],
+    ["The Vedas are considered:",["Smriti","Shruti","Purana","None"],1],
+    ["Charaka Samhita is associated with:",["Medicine","Astronomy","Music","Law"],0],
+    ["Knowledge derived from inference is:",["Pratyaksha","Anumana","Shabda","Arthapatti"],1],
+    ["Which Veda contains chants used in Soma sacrifice?",["Rigveda","Samaveda","Yajurveda","Atharvaveda"],1],
+    ["Manu Smriti is a guide for:",["Social and ethical laws","Ritual chanting","Medicine","Meditation techniques"],0],
+    ["Shruti means:",["Remembered","Heard","Written","Composed"],1],
+    ["Upanishads emphasize:",["Karma only","Moksha and spiritual knowledge","Ritual precision","Medical practices"],1],
+    ["The main function of Pramanas is:",["Conduct rituals","Provide valid sources of knowledge","Compose hymns","Perform sacrifices"],1]
+  ]},
+  CO2:{label:"CO-2",title:"National Education Policy 2020",questions:[
+    ["NEP 2020 was approved in the year:",["2018","2019","2020","2021"],2],
+    ["Which ministry implements NEP 2020?",["MHRD","Ministry of Education","UGC","AICTE"],1],
+    ["NEP 2020 replaced which earlier education policy?",["1968 Policy","1986 Policy","1992 Policy (modified)","Both b & c"],3],
+    ["The foundational stage in NEP (5+3+3+4) covers ages:",["6-8 years","3-8 years","8-11 years","14-18 years"],1],
+    ["The 5+3+3+4 curriculum corresponds to which age range?",["6-18 years","3-18 years","5-25 years","4-15 years"],1],
+    ["NEP recommends mother tongue as medium of instruction till:",["Grade 2","Grade 5","Grade 8","Grade 10"],1],
+    ["NEP promotes which multilingual strategy?",["Three-language formula","Two-language formula","Single language priority","Foreign language priority"],0],
+    ["NEP aims to achieve 100% GER in school education by:",["2030","2040","2025","2050"],1],
+    ["GER stands for:",["General Enrollment Ratio","Gross Enrollment Ratio","Graduate Education Rate","Government Education Review"],1],
+    ["Which feature is emphasized in NEP?",["Rote learning","Memorization","Holistic and skill-based education","Only theoretical learning"],2],
+    ["Higher Education regulator proposed by NEP:",["NCTE","NCERT","HECI","IGNOU"],2],
+    ["HECI stands for:",["Higher Education Council of India","Higher Education Commission of India","High Education Committee of India","None"],1],
+    ["National Research Foundation (NRF) under NEP is for:",["Teacher training","R&D and innovation","Sports promotion","Distance learning"],1],
+    ["NEP recommends how many years for undergraduate degrees?",["Fixed 3 years only","Fixed 4 years only","3 or 4 years flexible","2 years only"],2],
+    ["Multidisciplinary education in universities promotes:",["Single-subject specialization","Skill + Humanities + Science integration","No flexibility","Only business studies"],1],
+    ["ECCE is implemented under NEP for which level?",["Higher education","Early childhood","Technical training","Adult education"],1],
+    ["ECCE stands for:",["Early Childhood Care and Education","Early Career Counseling Education","Elementary Course Content Education","Education for Child Competency Enhancement"],0],
+    ["NCERT will develop National Curriculum Framework in which cycle?",["Every 2 years","Every 5 years","Every 10 years","No update required"],1],
+    ["NEP focuses on what kind of assessments?",["High-stakes exams","Continuous comprehensive evaluation","Competency-based assessment","Random testing"],2],
+    ["PARAKH is related to:",["National assessment center","Scholarship program","Teacher hiring portal","Vocational training"],0],
+    ["NEP proposes that teacher education degree will be:",["2-year diploma","4-year integrated B.Ed","1-year certification","Distance learning only"],1],
+    ["Professional development for teachers is called:",["CPD","CCE","CSR","CCD"],0],
+    ["NEP promotes teachers as:",["Information deliverers","Learning facilitators","Examination controllers","Only classroom managers"],1],
+    ["Vocational education target by 2025 is participation of:",["10% of learners","50% of learners","25% of learners","100% of learners"],1],
+    ["NEP aims to remove separation between:",["Arts and sports","Science and humanities","Academic and vocational streams","All of the above"],3],
+    ["NETF stands for:",["National Educational Technology Forum","New Educational Training Foundation","National e-Teaching Federation","National Teachers Forum"],0],
+    ["NEP encourages digital platforms like:",["SWAYAM","DIKSHA","MOOCS","All of these"],3],
+    ["NEP recommends which approach for technology?",["Tech-only learning","Blended learning","Offline only","No digital tools"],1],
+    ["NEP promotes ____ in education.",["Only Western knowledge","Indian Knowledge System integration","No cultural references","Foreign curriculum only"],1],
+    ["IKS cell is established under:",["NCERT","AICTE","UGC","Ministry of Culture"],1],
+    ["Subjects promoted under IKS include:",["Yoga, Ayurveda","Vedic mathematics","Arts, culture, heritage","All of the above"],3],
+    ["Key principle of NEP:",["One-size-fits-all","Flexibility & choice-based learning","Centralized strict curriculum","Exam-oriented system"],1],
+    ["NEP aims for education to be:",["Rigid & hierarchical","Stress-free & enjoyable","Corporatized entirely","Only skill-based"],1],
+    ["Focus on 21st century skills includes:",["Critical thinking","Creativity","Problem solving","All of the above"],3],
+    ["Multiple entry-exit options apply to:",["Primary education","UG programs","Teacher training only","Sports education"],1],
+    ["Academic Bank of Credit (ABC) supports:",["Credit transfer in higher education","Loan system","Teacher leave system","Research funding"],0],
+    ["NEP proposes phasing out of:",["Single-stream colleges","Autonomous universities","Private schools","Language diversity"],0],
+    ["NEP emphasizes autonomy in:",["Curriculum","Finance & administration","Academic decision making","All of the above"],3],
+    ["SEZs in NEP stand for:",["School Excellence Zones","Special Education Zones","Student Equity Zones","Social Empowerment Zones"],1],
+    ["NEP ensures educational equity for:",["SC/ST/OBC","Divyang learners","Socio-economically disadvantaged groups","All of these"],3],
+    ["NEP promotes assessment as:",["Tool for ranking","Tool for fear","Tool for learning improvement","Tool for punishment"],2],
+    ["What is discouraged under NEP?",["Practical learning","Rote memorization","Critical thinking","Creativity"],1],
+    ["NEP recommends board exams to be:",["Encouraging memorization","Low-stakes and competency-based","Highly difficult","Optional only"],1],
+    ["NEP encourages which teaching approach?",["Teacher dictatorship","Constructivist learning","Drill method","Monologue lectures"],1],
+    ["Skill subjects will start from which grade?",["Grade 3","Grade 6","Grade 8","Grade 10"],1],
+    ["NEP supports:",["Interdisciplinary education","Multidisciplinary education","Transdisciplinary education","All of the above"],3],
+    ["Bal Bhavans under NEP are for:",["Teacher training","Co-curricular learning spaces","Health training","Corporate meetings"],1],
+    ["NEP links education with:",["Sustainable Development Goals (SDGs)","Military expansion","Foreign policy","Banking industry only"],0],
+    ["NEP aligns early childhood education with:",["Montessori & global best practices","Mechanical drills","Corporate syllabus","Colonial patterns"],0],
+    ["Key phrase summarizing NEP 2020:",["Examination is everything","Knowledge over creativity","Transformational, holistic, flexible learning","Education for elite groups only"],2]
+  ]},
+  CO3:{label:"CO-3",title:"Literature, Arts & Culture",questions:[
+    ["Which of the following is considered the oldest classical language of India?",["Tamil","Sanskrit","Pali","Prakrit"],1],
+    ["The Vedas are composed in which language?",["Pali","Tamil","Sanskrit","Prakrit"],2],
+    ["Pali language is mainly associated with:",["Jain literature","Buddhist literature","Vedic rituals","Sangam texts"],1],
+    ["Sangam literature belongs to which language?",["Sanskrit","Pali","Tamil","Prakrit"],2],
+    ["Which text is part of Sangam literature?",["Rig Veda","Thirukkural","Arthashastra","Manusmriti"],1],
+    ["Thiruvalluvar is associated with:",["Sanskrit grammar","Tamil ethical literature","Buddhist philosophy","Natya Shastra"],1],
+    ["Which epic is written by Valmiki?",["Mahabharata","Ramayana","Silappadikaram","Buddhacharita"],1],
+    ["Mahabharata is traditionally attributed to:",["Kalidasa","Vyasa","Panini","Bharata"],1],
+    ["Buddhacharita was written by:",["Ashvaghosha","Kalidasa","Banabhatta","Patanjali"],0],
+    ["Kalidasa is best known for his work:",["Arthashastra","Abhijnana Shakuntalam","Yoga Sutras","Charaka Samhita"],1],
+    ["Natya Shastra is attributed to:",["Panini","Bharata Muni","Patanjali","Kalidasa"],1],
+    ["Natya Shastra deals with:",["Temple rituals","Performing arts","Grammar","Architecture"],1],
+    ["How many Rasas are described in Natya Shastra?",["Six","Eight","Nine","Ten"],2],
+    ["Which is NOT a classical dance form?",["Bharatanatyam","Kathakali","Yakshagana","Kuchipudi"],2],
+    ["Bharatanatyam originated in:",["Kerala","Andhra Pradesh","Tamil Nadu","Odisha"],2],
+    ["Kathak is traditionally associated with:",["Temples","Royal courts","Folk rituals","Monasteries"],1],
+    ["Odissi dance originated in:",["Odisha","Assam","Karnataka","Maharashtra"],0],
+    ["Manipuri dance is linked with:",["Shaivism","Vaishnavism","Buddhism","Jainism"],1],
+    ["Carnatic music developed mainly in:",["North India","South India","Western India","Eastern India"],1],
+    ["Hindustani music evolved primarily in:",["South India","North India","Eastern India","Deccan plateau"],1],
+    ["Nagara style of temple architecture is found mainly in:",["North India","South India","Eastern India","Western India"],0],
+    ["Dravida style temples are characterized by:",["Curvilinear shikhara","Gopurams","Rock-cut caves","Stupas"],1],
+    ["Vesara style is a blend of:",["Nagara and Dravida","Buddhist and Jain","Folk and classical","Cave and structural"],0],
+    ["Iconography mainly deals with:",["Temple construction","Symbolic representation of deities","Music notation","Oral traditions"],1],
+    ["The Nataraja form represents:",["Vishnu","Brahma","Shiva","Indra"],2],
+    ["Ajanta and Ellora caves belong to which art form?",["Mural painting","Rock-cut architecture","Structural temples","Bronze sculpture"],1],
+    ["Chola bronzes are famous for depicting:",["Buddha","Shiva as Nataraja","Jain Tirthankaras","Yakshas"],1],
+    ["Temple sculptures mainly served the purpose of:",["Decoration only","Religious instruction","Economic activity","Political propaganda"],1],
+    ["Which material was widely used in ancient Indian sculpture?",["Marble only","Stone and bronze","Wood only","Clay only"],1],
+    ["The Garbhagriha in a temple refers to:",["Assembly hall","Entrance","Sanctum sanctorum","Tower"],2],
+    ["Folk traditions are primarily transmitted through:",["Printed books","Oral storytelling","Stone inscriptions","Manuscripts only"],1],
+    ["Harikatha is a combination of:",["Dance and sculpture","Storytelling, music and devotion","Drama and painting","Ritual and architecture"],1],
+    ["Yakshagana is a folk theatre form of:",["Tamil Nadu","Karnataka","Odisha","Bengal"],1],
+    ["Pandavani folk tradition narrates stories from:",["Ramayana","Mahabharata","Puranas","Jataka tales"],1],
+    ["Jataka tales belong to:",["Jain literature","Buddhist tradition","Hindu epics","Sangam literature"],1],
+    ["Regional epics are important because they:",["Replace classical texts","Reflect local culture and values","Focus on royal history only","Ignore folk traditions"],1],
+    ["Villupattu is associated with which region?",["Kerala","Tamil Nadu","Assam","Rajasthan"],1],
+    ["Oral traditions help in preserving:",["Only entertainment","Cultural memory and history","Architecture","Grammar rules"],1],
+    ["Folk songs are mainly sung during:",["Examinations","Rituals and festivals","Political meetings","Trade activities"],1],
+    ["Which community art form uses masks extensively?",["Bharatanatyam","Kathak","Chhau dance","Odissi"],2],
+    ["Manuscripts in ancient India were commonly written on:",["Paper only","Palm leaves and birch bark","Stone slabs","Metal sheets"],1],
+    ["Preservation of manuscripts is important to:",["Increase tourism","Protect traditional knowledge","Promote trade","Encourage memorization"],1],
+    ["Which institution traditionally preserved manuscripts?",["Factories","Gurukulas and temples","Courts","Armies"],1],
+    ["Bhandaras are related to:",["Dance","Manuscript libraries","Music schools","Sculpture workshops"],1],
+    ["Oral transmission was preferred because:",["Writing was unknown","Accuracy and memorization were valued","Books were banned","Teachers opposed writing"],1],
+    ["Gurukula system emphasized:",["Paid education","Residential learning","Online learning","Distance education"],1],
+    ["The teacher in Gurukula system was called:",["Acharya or Guru","Professor","Instructor","Lecturer"],0],
+    ["Education in Gurukulas focused on:",["Examination results","Character building and values","Competition","Certificates"],1],
+    ["Which method was central to traditional education?",["Multiple-choice tests","Oral recitation and discussion","Written exams","Online assessment"],1],
+    ["Gurukula education aimed at developing:",["Skilled workers only","Holistic personality","Exam toppers","Clerks"],1],
+    ["Culture refers to:",["Economic system only","Way of life of people","Political structure","Technology alone"],1],
+    ["Civilization mainly denotes:",["Rural life","Urban development and institutions","Religious practices only","Folk traditions only"],1],
+    ["Indian civilization is known for its:",["Uniformity","Cultural diversity","Isolation","Rigidity"],1],
+    ["Unity in diversity is a feature of:",["Western civilization","Indian civilization","Industrial society","Nomadic culture"],1],
+    ["Cultural heritage includes:",["Only monuments","Tangible and intangible traditions","Only literature","Only arts"],1],
+    ["Intangible heritage includes:",["Temples","Dance, music and oral traditions","Sculpture","Architecture only"],1],
+    ["Festivals play an important role in:",["Economic planning","Cultural continuity","Political movements","Scientific development"],1],
+    ["Indian culture emphasizes harmony between:",["Human and machine","Human and nature","Teacher and exam","State and economy"],1],
+    ["Epics contributed to culture by:",["Providing entertainment only","Teaching moral values","Ignoring society","Replacing education"],1],
+    ["Performing arts in India were traditionally linked with:",["Entertainment alone","Religion and social life","Sports","Trade"],1],
+    ["Temple festivals helped in:",["Economic exchange only","Cultural integration","Political rivalry","Military training"],1],
+    ["Classical languages are important because they:",["Are no longer used","Preserve ancient knowledge","Replace regional languages","Limit learning"],1],
+    ["Pali Canon is called:",["Tripitaka","Vedas","Agamas","Sangam texts"],0],
+    ["Agamas are related to:",["Temple rituals and worship","Grammar","Medicine","Music"],0],
+    ["Silappadikaram is a famous epic in:",["Sanskrit","Tamil","Pali","Prakrit"],1],
+    ["Folk epics differ from classical epics because they are:",["Written texts only","Oral and region-specific","Court-centered","Sanskrit-based"],1],
+    ["Which art form combines song, dance and dialogue?",["Sculpture","Drama","Painting","Architecture"],1],
+    ["Classical music tradition emphasizes:",["Raga and Tala","Lyrics only","Instruments only","Dance only"],0],
+    ["Which instrument is common in Carnatic music?",["Sitar","Veena","Sarod","Tabla"],1],
+    ["Mridangam is primarily used in:",["Hindustani music","Carnatic music","Folk music only","Western music"],1],
+    ["Temple murals were mainly used to depict:",["Daily life only","Mythological themes","Trade activities","Scientific ideas"],1],
+    ["Sculpture in temples served as:",["Decoration only","Visual storytelling","Economic asset","Political symbol"],1],
+    ["Iconography helps devotees to:",["Memorize grammar","Understand philosophical ideas visually","Learn music","Practice yoga"],1],
+    ["Oral epics are preserved through:",["Printing presses","Performers and bards","Universities only","Libraries only"],1],
+    ["Manuscript copying was traditionally done by:",["Kings","Scribes and monks","Soldiers","Traders"],1],
+    ["The decline of oral traditions is mainly due to:",["Modern education systems","Printing technology","Urbanization and neglect","Classical languages"],2],
+    ["Preservation of culture requires:",["Ignoring tradition","Documentation and transmission","Only modernization","Elimination of folk arts"],1],
+    ["Traditional education stressed learning through:",["Experience and practice","Exams and tests","Ranks","Competition"],0],
+    ["Gurukula system promoted:",["Individualism","Discipline and simplicity","Materialism","Luxury"],1],
+    ["Cultural heritage strengthens:",["Identity and continuity","Conflict","Fragmentation","Isolation"],0],
+    ["Traditional storytelling often used:",["Written scripts only","Music, gestures and narration","Silent reading","Visual slides"],1],
+    ["The aim of Natya Shastra was to:",["Entertain elites","Educate and delight society","Replace rituals","Promote trade"],1],
+    ["Classical dance follows:",["Fixed choreography only","Codified techniques and expressions","No rules","Folk improvisation only"],1],
+    ["Folk arts are important because they:",["Are outdated","Represent people's culture","Replace classical arts","Are commercial only"],1],
+    ["Sanskrit dramas were usually staged in:",["Streets","Temples and courts","Schools only","Marketplaces"],1],
+    ["The concept of Rasa aims at evoking:",["Knowledge","Aesthetic experience","Fear","Discipline"],1],
+    ["Which Rasa represents love?",["Veera","Shringara","Raudra","Bhayanaka"],1],
+    ["Classical literature often integrates:",["Ethics and aesthetics","Science only","Politics only","Economy only"],0],
+    ["Temple architecture reflects:",["Economic strength only","Spiritual worldview","Military power","Trade routes"],1],
+    ["Manuscript culture helped in:",["Preserving philosophical texts","Replacing oral tradition","Limiting knowledge","Destroying diversity"],0],
+    ["Regional epics often exist in:",["Single written version","Multiple oral versions","Sanskrit only","Printed form only"],1],
+    ["Culture is transmitted from one generation to another through:",["Instinct","Education and tradition","Biology","Technology only"],1],
+    ["Indian civilization places importance on:",["Material success only","Values and ethics","Competition","Industrial growth alone"],1],
+    ["Performing arts were traditionally patronized by:",["Traders only","Kings and temples","Farmers only","Foreigners only"],1],
+    ["Classical texts were preserved mainly through:",["Printing presses","Memorization and recitation","Digital media","Translation only"],1],
+    ["Gurukula education promoted respect for:",["Wealth","Guru and knowledge","Power","Examination ranks"],1],
+    ["Folk traditions contribute to:",["Cultural diversity","Cultural uniformity","Decline of arts","Loss of identity"],0],
+    ["Manuscript conservation today requires:",["Neglect","Scientific preservation methods","Destruction","Oral teaching only"],1],
+    ["Traditional education viewed knowledge as:",["Commodity","Sacred and transformative","Mechanical skill","Examination tool"],1],
+    ["IKS mainly emphasizes:",["Isolated study of arts","Integrated understanding of culture and civilization","Only modern art forms","Technical education"],1]
+  ]},
+  CO4:{label:"CO-4",title:"Sustainable Dev. & Environment",questions:[
+    ["Indian Knowledge System views sustainable development as:",["Economic growth only","Balance between humans and nature","Industrial expansion","Technological dominance"],1],
+    ["The concept of harmony with nature in IKS is closely related to:",["Capitalism","Dharma","Consumerism","Globalization"],1],
+    ["The idea of 'Vasudhaiva Kutumbakam' means:",["World is a battlefield","World is one family","Survival of the fittest","Material success"],1],
+    ["Environmental ethics in IKS emphasize:",["Exploitation of resources","Conservation and restraint","Industrial profit","Urbanization"],1],
+    ["Which ancient Indian practice promotes water conservation?",["Industrial dams","Stepwells and tanks","Desalination","Borewells"],1],
+    ["Sacred groves in India represent:",["Urban planning","Community-based conservation","Commercial forestry","Mining zones"],1],
+    ["The Panchamahabhuta theory refers to:",["Five senses","Five elements of nature","Five rituals","Five scriptures"],1],
+    ["IKS approach to environment is best described as:",["Anthropocentric","Ecocentric","Technocentric","Profit-centric"],1],
+    ["The concept of 'Rta' in Vedic thought signifies:",["Cosmic order","Political power","Economic growth","Social hierarchy"],0],
+    ["Sustainable living in IKS is guided by:",["Unlimited consumption","Aparigraha (non-possessiveness)","Competition","Industrialization"],1],
+    ["Ayurveda focuses primarily on:",["Curative medicine only","Preventive and holistic health","Emergency medicine","Surgery alone"],1],
+    ["The three Doshas in Ayurveda are:",["Vata, Pitta, Kapha","Satva, Rajas, Tamas","Dharma, Artha, Kama","Agni, Soma, Vayu"],0],
+    ["Yoga aims at:",["Physical fitness only","Union of body, mind, and soul","Athletic excellence","Entertainment"],1],
+    ["Which text is considered foundational for Yoga philosophy?",["Yoga Sutras of Patanjali","Arthashastra","Manusmriti","Natyashastra"],0],
+    ["Mindfulness practices in IKS emphasize:",["Speed and efficiency","Awareness and self-regulation","Competition","Material success"],1],
+    ["Pranayama is related to:",["Diet","Breathing regulation","Meditation posture","Physical exercise"],1],
+    ["Dhyana in Ashtanga Yoga means:",["Discipline","Concentration","Meditation","Liberation"],2],
+    ["International Day of Yoga is celebrated on:",["June 21","May 5","July 1","August 15"],0],
+    ["Yoga contributes to mental health by:",["Increasing stress","Enhancing emotional balance","Promoting competition","Ignoring emotions"],1],
+    ["Ayurveda considers health as:",["Absence of disease","Balance of body, mind, and spirit","Physical strength only","Longevity alone"],1],
+    ["Manuscripts in India are traditionally written on:",["Paper only","Palm leaves and birch bark","Stone tablets","Metal sheets"],1],
+    ["The National Mission for Manuscripts was launched in:",["1995","2003","2010","2020"],1],
+    ["The primary objective of the National Mission for Manuscripts is to:",["Commercialize texts","Preserve and digitize manuscripts","Translate only foreign works","Destroy old records"],1],
+    ["Digitization of manuscripts helps in:",["Physical decay","Wider accessibility and preservation","Loss of authenticity","Commercial misuse"],1],
+    ["Manuscript preservation supports:",["Cultural continuity","Cultural loss","Knowledge erosion","Historical neglect"],0],
+    ["Which institution coordinates manuscript preservation in India?",["UGC","IGNCA","National Mission for Manuscripts","AICTE"],2],
+    ["One major challenge in manuscript preservation is:",["Abundance of resources","Linguistic diversity","Climate conditions","Both B and C"],3],
+    ["Digitisation aligns IKS with:",["Ancient isolation","Modern technology","Oral extinction","Cultural neglect"],1],
+    ["Manuscript cataloguing helps in:",["Ignoring texts","Systematic documentation","Loss of heritage","Commercialization"],1],
+    ["Preservation of manuscripts contributes to:",["Sustainable knowledge systems","Knowledge destruction","Cultural alienation","Academic decline"],0],
+    ["NEP 2020 emphasizes integration of:",["Only western knowledge","Indian Knowledge Systems","Technical skills alone","Exam-oriented learning"],1],
+    ["NEP 2020 promotes education in:",["Foreign languages only","Indian languages and mother tongue","English only","No language learning"],1],
+    ["Holistic and multidisciplinary education is a key feature of:",["NEP 1986","NEP 2020","RTE Act only","Colonial policy"],1],
+    ["IKS integration helps students develop:",["Rote learning","Ethical and cultural grounding","Exam fear","Mechanical skills"],1],
+    ["Yoga education in schools promotes:",["Stress and anxiety","Physical and mental well-being","Competition","Rigid discipline"],1],
+    ["Value-based education in IKS emphasizes:",["Material success","Character and ethics","Industrial output","Ranking"],1],
+    ["Experiential learning in IKS is similar to:",["Gurukula system","Factory model","Lecture-only method","Examination drilling"],0],
+    ["NEP 2020 encourages use of technology for:",["Exclusion","Access and inclusion","Memorization","Privatization only"],1],
+    ["IKS-based curriculum supports:",["Fragmented knowledge","Holistic development","Narrow specialization","Cultural alienation"],1],
+    ["Integration of IKS promotes:",["Loss of identity","Cultural confidence","Intellectual dependency","Colonial mindset"],1],
+    ["Mindfulness practices help in:",["Emotional imbalance","Stress reduction","Increased anxiety","Mental fatigue"],1],
+    ["IKS contributes to public health by:",["Ignoring lifestyle diseases","Promoting preventive healthcare","Focusing only on hospitals","Rejecting modern medicine"],1],
+    ["Sustainable agriculture in IKS includes:",["Monoculture farming","Organic and traditional practices","Chemical dependency","Industrial farming"],1],
+    ["Yoga and meditation are globally recognized for:",["Physical competition","Mental peace and resilience","Entertainment","Profit generation"],1],
+    ["Preservation of IKS supports:",["Cultural erosion","Knowledge sovereignty","Dependency","Intellectual loss"],1],
+    ["NEP 2020 aims to create learners who are:",["Exam-centric","Holistic and innovative","Passive recipients","Isolated thinkers"],1],
+    ["Integration of IKS in higher education encourages:",["Interdisciplinary research","Knowledge silos","Rote memorization","Cultural neglect"],0],
+    ["Traditional knowledge supports SDGs by:",["Opposing sustainability","Encouraging responsible consumption","Ignoring environment","Promoting waste"],1],
+    ["Digitization bridges the gap between:",["Past and present knowledge","Knowledge and ignorance","Tradition and loss","Culture and decay"],0],
+    ["The ultimate aim of integrating IKS is:",["Cultural revival alone","Holistic human development","Exam success","Economic profit"],1]
+  ]}
+};
+
+let currentCO=null, timerInterval=null, seconds=0, score=0, answeredCount=0, totalQ=0, isSubmitted=false;
+const LETTERS=['A','B','C','D'];
+
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function startTest(coKey){
+  currentCO=coKey; const co=quizData[coKey];
+  score=0; answeredCount=0; isSubmitted=false; seconds=0; totalQ=co.questions.length;
+  document.getElementById('topbar-title').textContent=co.label+' — '+co.title;
+  document.getElementById('topbar-sub').textContent='0 / '+totalQ+' answered';
+  document.getElementById('live-score').textContent='0';
+  document.getElementById('timer').textContent='00:00';
+  document.getElementById('answered-count').textContent='0';
+  document.getElementById('total-count').textContent=totalQ;
+  document.getElementById('progress-fill').style.width='0%';
+  buildQuestions(co); showScreen('test-screen');
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{seconds++;document.getElementById('timer').textContent=fmt(seconds);},1000);
+}
+
+function buildQuestions(co){
+  const container=document.getElementById('questions-container');
+  container.innerHTML='';
+  co.questions.forEach(([qText,opts,correctIdx],qIdx)=>{
+    const card=document.createElement('div');
+    card.className='question-card'; card.id='qcard-'+qIdx;
+    card.dataset.correct=correctIdx; card.dataset.answered='false';
+
+    const hdr=document.createElement('div'); hdr.className='q-header';
+    const num=document.createElement('div'); num.className='q-number'; num.textContent=qIdx+1;
+    const qt=document.createElement('div'); qt.className='q-text'; qt.textContent=qText;
+    hdr.append(num,qt); card.appendChild(hdr);
+
+    const optDiv=document.createElement('div'); optDiv.className='options';
+    opts.forEach((optText,optIdx)=>{
+      const lbl=document.createElement('label');
+      lbl.className='option-label'; lbl.id='label-'+qIdx+'-'+optIdx;
+      const radio=document.createElement('input'); radio.type='radio'; radio.name='q'+qIdx; radio.value=optIdx;
+      const circle=document.createElement('div'); circle.className='opt-circle'; circle.textContent=LETTERS[optIdx];
+      const txt=document.createElement('span'); txt.textContent=optText;
+      lbl.append(radio,circle,txt); optDiv.appendChild(lbl);
+
+      radio.addEventListener('change',()=>{
+        if(card.dataset.answered==='true') return;
+        card.dataset.answered='true';
+        card.querySelectorAll('input[type="radio"]').forEach(r=>r.disabled=true);
+        card.querySelectorAll('.option-label').forEach(l=>l.classList.add('locked'));
+        const cIdx=parseInt(card.dataset.correct);
+        if(optIdx===cIdx){
+          lbl.classList.add('correct'); circle.textContent='✓'; addTag(lbl,'Correct');
+          card.classList.add('answered-correct'); num.textContent='✓'; score++;
+          document.getElementById('live-score').textContent=score;
+        } else {
+          lbl.classList.add('wrong'); circle.textContent='✕'; addTag(lbl,'Wrong');
+          card.classList.add('answered-wrong'); num.textContent='✕';
+          const cl=document.getElementById('label-'+qIdx+'-'+cIdx);
+          cl.classList.add('show-correct'); cl.querySelector('.opt-circle').textContent='✓'; addTag(cl,'Answer');
+        }
+        answeredCount++;
+        document.getElementById('topbar-sub').textContent=answeredCount+' / '+totalQ+' answered';
+        document.getElementById('answered-count').textContent=answeredCount;
+        document.getElementById('progress-fill').style.width=(answeredCount/totalQ*100)+'%';
+      });
+    });
+    card.appendChild(optDiv); container.appendChild(card);
+  });
+}
+
+function addTag(lbl,text){
+  const t=document.createElement('span'); t.className='feedback-tag'; t.textContent=text; lbl.appendChild(t);
+}
+
+function submitTest(){
+  if(isSubmitted) return; isSubmitted=true; clearInterval(timerInterval);
+  quizData[currentCO].questions.forEach(([,opts,cIdx],qIdx)=>{
+    const card=document.getElementById('qcard-'+qIdx);
+    if(card.dataset.answered==='false'){
+      card.querySelectorAll('input[type="radio"]').forEach(r=>r.disabled=true);
+      const cl=document.getElementById('label-'+qIdx+'-'+cIdx);
+      cl.classList.add('show-correct'); cl.querySelector('.opt-circle').textContent='✓'; addTag(cl,'Answer');
+    }
+  });
+  const wrong=answeredCount-score, skipped=totalQ-answeredCount, pct=Math.round(score/totalQ*100);
+  let emoji='🎉',title='Excellent!';
+  if(pct<40){emoji='😔';title='Keep Practising!';}
+  else if(pct<60){emoji='🙂';title='Good Effort!';}
+  else if(pct<80){emoji='👍';title='Well Done!';}
+  document.getElementById('result-emoji').textContent=emoji;
+  document.getElementById('result-title').textContent=title;
+  document.getElementById('result-score').textContent=score+'/'+totalQ;
+  document.getElementById('result-label').textContent=pct+'% score · '+quizData[currentCO].label;
+  document.getElementById('res-correct').textContent=score;
+  document.getElementById('res-wrong').textContent=wrong;
+  document.getElementById('res-skipped').textContent=skipped;
+  document.getElementById('res-time').textContent=fmt(seconds);
+  document.getElementById('result-overlay').classList.add('show');
+}
+
+function retakeTest(){document.getElementById('result-overlay').classList.remove('show');startTest(currentCO);}
+function goHome(){clearInterval(timerInterval);document.getElementById('result-overlay').classList.remove('show');showScreen('home-screen');}
+</script>
+</body>
+</html>
